@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="Suite de Pruebas">
+    <test name="Prueba Google">
+        <classes>
+            <class name="tests.HerokuTest"/>
+            <parameter name="numeros" value="3221213312"></parameter>
+        </classes>
+    </test>
+    <test name="Prueba Google par2" enabled="true">
+        <classes>
+            <class name="tests.BuscarEnGoogleTest"/>
+            <parameter name="busqueda" value="Technology Solutions"></parameter>
+        </classes>
+    </test>
+</suite>
