@@ -3,15 +3,17 @@ package tests;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.testng.ITestResult;
+import org.testng.annotations.*;
+
 import pages.CartPage;
 import pages.LoginPage;
 import pages.ProductsPage;
+import utils.ScreenshotUtil;
 
-
+import java.util.Map;
 
 public class LoginTest {
     private WebDriver driver;
@@ -19,116 +21,143 @@ public class LoginTest {
     private ProductsPage productsPage;
     private CartPage cartPage;
 
+    private String currentTestName;
+
     @BeforeMethod
-    public void setUp() {
-        // Configura automáticamente el chromedriver
+    public void setUp(ITestResult result) {
+        currentTestName = result.getMethod().getMethodName(); // Detecta el nombre del test
+
         WebDriverManager.chromedriver().setup();
 
-        // Inicializa el navegador
-        driver = new ChromeDriver();
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--disable-blink-features=AutomationControlled");
+        options.addArguments("--incognito");
+        options.addArguments("--disable-extensions");
+        options.addArguments("--disable-popup-blocking");
+        options.addArguments("--disable-notifications");
+        options.addArguments("user-data-dir=C:/temp/selenium_profile");
+
+        options.setExperimentalOption("prefs", Map.of(
+                "credentials_enable_service", false,
+                "profile.password_manager_enabled", false
+        ));
+
+        driver = new ChromeDriver(options);
         driver.manage().window().maximize();
         driver.get("https://www.saucedemo.com/");
 
-        // Inicializa las páginas
         loginPage = new LoginPage(driver);
         productsPage = new ProductsPage(driver);
         cartPage = new CartPage(driver);
     }
 
-    //Script 1
+    // Script 1
     @Test
     public void testAddItemToCart() throws InterruptedException {
         loginPage.enterUsername("standard_user");
-        Thread.sleep(1000); // Pausa de 1 segundo para ver el ingreso del usuario
+        Thread.sleep(1000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "01_usuario_ingresado");
 
         loginPage.enterPassword("secret_sauce");
-        Thread.sleep(1000); // Pausa de 1 segundo para ver el ingreso de la contraseña
+        Thread.sleep(1000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "02_password_ingresado");
 
         loginPage.clickLogin();
-        Thread.sleep(2000); // Pausa de 2 segundos para observar el inicio de sesión
+        Thread.sleep(2000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "03_login_exitoso");
 
         Assert.assertEquals(productsPage.getPageTitle(), "Products");
-        Thread.sleep(1000); // Pausa de 1 segundo para verificar la página de productos
+        Thread.sleep(1000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "04_ver_pagina_productos");
 
         productsPage.addFirstProductToCart();
-        Thread.sleep(1000); // Pausa de 1 segundo para ver la acción de agregar al carrito
+        Thread.sleep(1000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "05_producto_agregado");
 
         productsPage.goToCart();
-        Thread.sleep(2000); // Pausa de 2 segundos para observar la navegación al carrito
+        Thread.sleep(2000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "06_carrito");
 
         Assert.assertEquals(cartPage.getProductName(), "Sauce Labs Backpack");
+        Thread.sleep(2000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "07_validacion_producto");
     }
 
-    //Script 2
+    // Script 2
     @Test
-    public void testInvalidLogin() {
+    public void testInvalidLogin() throws InterruptedException {
         loginPage.enterUsername("locked_out_user");
         loginPage.enterPassword("secret_sauce");
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "01_datos_invalidos");
+
         loginPage.clickLogin();
+        Thread.sleep(1000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "02_error_mostrado");
 
         Assert.assertEquals(loginPage.getErrorMessage(), "Epic sadface: Sorry, this user has been locked out.");
     }
 
-    //Script 3
+    // Script 3
     @Test
     public void testProductSorting() throws InterruptedException {
-        // Realizar login exitoso
         loginPage.enterUsername("standard_user");
         loginPage.enterPassword("secret_sauce");
         loginPage.clickLogin();
-        Thread.sleep(2000); // Pausa para observar el inicio de sesión
+        Thread.sleep(2000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "01_login_sorting");
 
-        // Verificar que el login fue exitoso
         Assert.assertEquals(productsPage.getPageTitle(), "Products");
 
-        // Localizar el menú desplegable y seleccionar "Price (high to low)"
         productsPage.selectSortingOption("Price (high to low)");
-        Thread.sleep(2000); // Pausa para observar el ordenamiento
+        Thread.sleep(2000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "02_sort_desc");
 
-        // Verificar que los productos están ordenados correctamente
         double firstProductPrice = productsPage.getFirstProductPrice();
         double lastProductPrice = productsPage.getLastProductPrice();
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "03_verificacion_precios");
+
         Assert.assertTrue(firstProductPrice > lastProductPrice, "Los productos no están ordenados correctamente.");
     }
 
-    //Script 4
+    // Script 4
     @Test
     public void testCompletePurchaseFlow() throws InterruptedException {
-        // Realizar login exitoso
         loginPage.enterUsername("standard_user");
         loginPage.enterPassword("secret_sauce");
-        loginPage.clickLogin();
-        Thread.sleep(2000); // Pausa para observar el inicio de sesión
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "01_usuario_ingresado");
 
-        // Verificar que el login fue exitoso
+        loginPage.clickLogin();
+        Thread.sleep(2000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "02_login_exitoso");
+
         Assert.assertEquals(productsPage.getPageTitle(), "Products");
 
-        // Agregar cualquier producto al carrito
         productsPage.addFirstProductToCart();
-        Thread.sleep(1000); // Pausa para observar la acción
+        Thread.sleep(1000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "03_producto_agregado");
 
-        // Ir al carrito
         productsPage.goToCart();
-        Thread.sleep(2000); // Pausa para observar la navegación al carrito
+        Thread.sleep(2000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "04_carrito");
 
-        // Hacer clic en el botón "Checkout"
         cartPage.clickCheckout();
-        Thread.sleep(1000); // Pausa para observar la acción
+        Thread.sleep(1000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "05_checkout");
 
-        // Rellenar el formulario de información del comprador
         cartPage.enterCheckoutInformation("Andres", "Deza", "1234567");
-        Thread.sleep(1000); // Pausa para observar el ingreso de datos
+        Thread.sleep(1000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "06_datos_ingresados");
 
-        // Hacer clic en "Continue"
         cartPage.clickContinue();
-        Thread.sleep(2000); // Pausa para observar la acción
+        Thread.sleep(2000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "07_continuar");
 
-        // Hacer clic en "Finish"
         cartPage.clickFinish();
-        Thread.sleep(2000); // Pausa para observar la acción
+        Thread.sleep(2000);
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "08_finalizar");
 
-        // Verificar que se muestra el mensaje de confirmación
         Assert.assertEquals(cartPage.getConfirmationMessage(), "Thank you for your order!");
+        ScreenshotUtil.takeScreenshot(driver, currentTestName, "09_confirmacion");
     }
 
     @AfterMethod
